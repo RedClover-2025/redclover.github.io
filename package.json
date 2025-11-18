@@ -1,0 +1,17 @@
+{
+  "name": "redclover-web",
+  "version": "1.0.0",
+  "description": "RedClover Capital official website",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": ["fintech", "tokenization", "rwa"],
+  "author": "RedClover Capital",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.4.0"
+  }
+}
