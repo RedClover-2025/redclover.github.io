@@ -7,11 +7,16 @@
     "start": "node index.js",
     "dev": "node index.js"
   },
-  "keywords": ["fintech", "tokenization", "rwa"],
+  "keywords": [
+    "fintech",
+    "tokenization",
+    "rwa"
+  ],
   "author": "RedClover Capital",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "@google-cloud/storage": "^6.x"
   }
 }
