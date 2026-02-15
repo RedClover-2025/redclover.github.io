@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const {Storage} = require('@google-cloud/storage');
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -6,6 +7,9 @@ const BUCKET_NAME = 'redclover-site';
 
 const storage = new Storage();
 const bucket = storage.bucket(BUCKET_NAME);
+
+// Serve local static files (dashboard, etc.) from public/
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', async (req, res) => {
   try {

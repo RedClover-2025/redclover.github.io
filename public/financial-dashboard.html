@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RedClover Capital — Financial Dashboard &amp; Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --rc-green: #1a6b3c;
+    --rc-green-light: #2a9d5c;
+    --rc-green-dark: #0e4d2a;
+    --rc-gold: #c9a84c;
+    --rc-gold-light: #dfc06e;
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-card: #1c2333;
+    --bg-input: #0d1117;
+    --border: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --red: #f85149;
+    --red-bg: rgba(248,81,73,0.1);
+    --green: #3fb950;
+    --green-bg: rgba(63,185,80,0.1);
+    --blue: #58a6ff;
+    --blue-bg: rgba(88,166,255,0.1);
+    --yellow: #d29922;
+    --yellow-bg: rgba(210,153,34,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, var(--rc-green-dark), var(--bg-secondary));
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--rc-green);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px; color: #fff;
+  }
+
+  .logo h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .logo h1 span { color: var(--rc-gold); }
+
+  .header-actions {
+    display: flex; gap: 8px;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .btn:hover { border-color: var(--text-muted); background: var(--bg-card); }
+  .btn-primary { background: var(--rc-green); border-color: var(--rc-green); color: #fff; }
+  .btn-primary:hover { background: var(--rc-green-light); }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red-bg); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  .container { max-width: 1440px; margin: 0 auto; padding: 20px 24px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: inherit;
+  }
+
+  .tab:hover { color: var(--text-primary); }
+  .tab.active { color: var(--rc-gold); border-bottom-color: var(--rc-gold); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* KPI Row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .kpi-change {
+    font-size: 12px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kpi-change.positive { color: var(--green); }
+  .kpi-change.negative { color: var(--red); }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+  }
+
+  .panel-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .panel-body { padding: 20px; }
+  .panel-body.no-pad { padding: 0; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th, td {
+    padding: 10px 16px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  th { background: var(--bg-secondary); color: var(--text-secondary); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  th:first-child, td:first-child { text-align: left; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .row-header { font-weight: 600; color: var(--text-primary); }
+  .row-subtotal { font-weight: 700; background: rgba(255,255,255,0.03); }
+  .row-subtotal td { border-top: 2px solid var(--border); }
+  .indent { padding-left: 32px; color: var(--text-secondary); }
+
+  /* Forms */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+
+  input[type="number"], input[type="text"], select {
+    padding: 8px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus { outline: none; border-color: var(--rc-green); box-shadow: 0 0 0 3px rgba(26,107,60,0.2); }
+
+  /* Scenario badges */
+  .scenario-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .scenario-best { background: var(--green-bg); color: var(--green); }
+  .scenario-base { background: var(--blue-bg); color: var(--blue); }
+  .scenario-worst { background: var(--red-bg); color: var(--red); }
+
+  /* Chart containers */
+  .chart-container { position: relative; width: 100%; max-height: 350px; }
+
+  /* Sensitivity table */
+  .sensitivity-cell {
+    font-weight: 600;
+    min-width: 80px;
+  }
+
+  .sensitivity-cell.high-positive { background: rgba(63,185,80,0.15); color: var(--green); }
+  .sensitivity-cell.low-positive { background: rgba(63,185,80,0.07); color: var(--green); }
+  .sensitivity-cell.neutral { color: var(--text-secondary); }
+  .sensitivity-cell.low-negative { background: rgba(248,81,73,0.07); color: var(--red); }
+  .sensitivity-cell.high-negative { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  /* Waterfall */
+  .waterfall-positive { background: var(--green); }
+  .waterfall-negative { background: var(--red); }
+  .waterfall-total { background: var(--blue); }
+
+  /* Tooltip-like info */
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--border);
+    font-size: 10px;
+    color: var(--text-secondary);
+    cursor: help;
+    margin-left: 4px;
+  }
+
+  /* Export modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 480px;
+    width: 90%;
+  }
+
+  .modal h2 { font-size: 18px; margin-bottom: 16px; }
+  .modal p { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* Print */
+  @media print {
+    header { position: static; }
+    .btn, .tabs { display: none; }
+    .tab-content { display: block !important; page-break-inside: avoid; }
+    body { background: #fff; color: #000; }
+    .panel, .kpi-card { border-color: #ccc; background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">RC</div>
+    <h1>RedClover <span>Capital</span> — Financial Dashboard</h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="resetToDefaults()">Reset</button>
+    <button class="btn" onclick="openExportModal()">Export CSV</button>
+    <button class="btn btn-primary" onclick="recalculate()">Recalculate</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="overview" role="tab">Overview</button>
+    <button class="tab" data-tab="assumptions" role="tab">Assumptions</button>
+    <button class="tab" data-tab="income" role="tab">Income Statement</button>
+    <button class="tab" data-tab="cashflow" role="tab">Cash Flow</button>
+    <button class="tab" data-tab="balance" role="tab">Balance Sheet</button>
+    <button class="tab" data-tab="scenarios" role="tab">Scenario Analysis</button>
+    <button class="tab" data-tab="sensitivity" role="tab">Sensitivity</button>
+    <button class="tab" data-tab="valuation" role="tab">Valuation</button>
+  </div>
+
+  <!-- ==================== OVERVIEW ==================== -->
+  <div id="tab-overview" class="tab-content active">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Revenue vs. Expenses (Annual)</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartRevExp"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Net Cash Flow (Annual)</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartNetCF"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Revenue Breakdown — Year 1</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartRevBreakdown"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Cumulative Cash Flow</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartCumCF"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Key Financial Metrics</span></div>
+      <div class="panel-body">
+        <div class="table-wrap"><table id="metricsTable"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ASSUMPTIONS ==================== -->
+  <div id="tab-assumptions" class="tab-content">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Model Configuration</span>
+        <span style="font-size:12px;color:var(--text-secondary)">Changes auto-recalculate</span>
+      </div>
+      <div class="panel-body">
+        <h3 style="font-size:14px;margin-bottom:12px;color:var(--rc-gold)">General</h3>
+        <div class="form-grid" style="margin-bottom:24px">
+          <div class="form-group">
+            <label>Projection Period (Years)</label>
+            <input type="number" id="inp-projYears" min="1" max="10" value="5">
+          </div>
+          <div class="form-group">
+            <label>Discount Rate (%)</label>
+            <input type="number" id="inp-discountRate" step="0.1" value="12">
+          </div>
+          <div class="form-group">
+            <label>Tax Rate (%)</label>
+            <input type="number" id="inp-taxRate" step="0.1" value="21">
+          </div>
+          <div class="form-group">
+            <label>Inflation Rate (%)</label>
+            <input type="number" id="inp-inflationRate" step="0.1" value="2.5">
+          </div>
+          <div class="form-group">
+            <label>Initial Investment ($)</label>
+            <input type="number" id="inp-initialInvestment" step="10000" value="500000">
+          </div>
+          <div class="form-group">
+            <label>Working Capital (% of Revenue)</label>
+            <input type="number" id="inp-workingCapPct" step="0.5" value="10">
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;margin-bottom:12px;color:var(--rc-gold)">Revenue Streams</h3>
+        <div class="form-grid" style="margin-bottom:24px">
+          <div class="form-group">
+            <label>Tokenization Fees — Year 1 ($)</label>
+            <input type="number" id="inp-rev-tokenization" step="10000" value="250000">
+          </div>
+          <div class="form-group">
+            <label>Platform Subscriptions — Year 1 ($)</label>
+            <input type="number" id="inp-rev-subscriptions" step="10000" value="180000">
+          </div>
+          <div class="form-group">
+            <label>Advisory & Consulting — Year 1 ($)</label>
+            <input type="number" id="inp-rev-advisory" step="10000" value="120000">
+          </div>
+          <div class="form-group">
+            <label>Transaction Commissions — Year 1 ($)</label>
+            <input type="number" id="inp-rev-commissions" step="10000" value="80000">
+          </div>
+          <div class="form-group">
+            <label>Revenue Growth Rate — Y/Y (%)</label>
+            <input type="number" id="inp-revenueGrowth" step="1" value="25">
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;margin-bottom:12px;color:var(--rc-gold)">Cost Structure</h3>
+        <div class="form-grid" style="margin-bottom:24px">
+          <div class="form-group">
+            <label>Salaries & Benefits — Year 1 ($)</label>
+            <input type="number" id="inp-cost-salaries" step="10000" value="280000">
+          </div>
+          <div class="form-group">
+            <label>Technology & Infrastructure ($)</label>
+            <input type="number" id="inp-cost-tech" step="5000" value="95000">
+          </div>
+          <div class="form-group">
+            <label>Legal & Compliance ($)</label>
+            <input type="number" id="inp-cost-legal" step="5000" value="60000">
+          </div>
+          <div class="form-group">
+            <label>Marketing & Sales ($)</label>
+            <input type="number" id="inp-cost-marketing" step="5000" value="45000">
+          </div>
+          <div class="form-group">
+            <label>Office & General Admin ($)</label>
+            <input type="number" id="inp-cost-admin" step="5000" value="35000">
+          </div>
+          <div class="form-group">
+            <label>COGS (% of Revenue)</label>
+            <input type="number" id="inp-cogsPct" step="1" value="15">
+          </div>
+          <div class="form-group">
+            <label>OpEx Growth Rate — Y/Y (%)</label>
+            <input type="number" id="inp-opexGrowth" step="1" value="12">
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;margin-bottom:12px;color:var(--rc-gold)">Capital & Depreciation</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>CapEx — Year 1 ($)</label>
+            <input type="number" id="inp-capex" step="5000" value="75000">
+          </div>
+          <div class="form-group">
+            <label>CapEx Growth Rate (%)</label>
+            <input type="number" id="inp-capexGrowth" step="1" value="8">
+          </div>
+          <div class="form-group">
+            <label>Depreciation — Year 1 ($)</label>
+            <input type="number" id="inp-depreciation" step="5000" value="30000">
+          </div>
+          <div class="form-group">
+            <label>Debt Outstanding ($)</label>
+            <input type="number" id="inp-debtOutstanding" step="10000" value="200000">
+          </div>
+          <div class="form-group">
+            <label>Interest Rate on Debt (%)</label>
+            <input type="number" id="inp-interestRate" step="0.1" value="6.5">
+          </div>
+          <div class="form-group">
+            <label>Annual Debt Repayment ($)</label>
+            <input type="number" id="inp-debtRepayment" step="5000" value="40000">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== INCOME STATEMENT ==================== -->
+  <div id="tab-income" class="tab-content">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Pro Forma Income Statement</span>
+        <button class="btn btn-sm" onclick="exportTable('incomeTable')">Export</button>
+      </div>
+      <div class="panel-body no-pad">
+        <div class="table-wrap"><table id="incomeTable"></table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Margin Analysis</span></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chartMargins"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- ==================== CASH FLOW ==================== -->
+  <div id="tab-cashflow" class="tab-content">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Cash Flow Statement</span>
+        <button class="btn btn-sm" onclick="exportTable('cashflowTable')">Export</button>
+      </div>
+      <div class="panel-body no-pad">
+        <div class="table-wrap"><table id="cashflowTable"></table></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Cash Flow Waterfall — Year 1</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartWaterfall"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Free Cash Flow Trend</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartFCF"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== BALANCE SHEET ==================== -->
+  <div id="tab-balance" class="tab-content">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Pro Forma Balance Sheet</span>
+        <button class="btn btn-sm" onclick="exportTable('balanceTable')">Export</button>
+      </div>
+      <div class="panel-body no-pad">
+        <div class="table-wrap"><table id="balanceTable"></table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Asset Composition</span></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chartAssets"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- ==================== SCENARIO ANALYSIS ==================== -->
+  <div id="tab-scenarios" class="tab-content">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Scenario Parameters</span></div>
+      <div class="panel-body">
+        <div class="table-wrap"><table id="scenarioParamsTable"></table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Scenario Comparison — Key Outputs</span></div>
+      <div class="panel-body no-pad">
+        <div class="table-wrap"><table id="scenarioResultsTable"></table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Revenue Trajectory by Scenario</span></div>
+      <div class="panel-body"><div class="chart-container"><canvas id="chartScenarios"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- ==================== SENSITIVITY ==================== -->
+  <div id="tab-sensitivity" class="tab-content">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Sensitivity Analysis — NPV Impact</span>
+        <span style="font-size:12px;color:var(--text-secondary)">Revenue Growth vs. Discount Rate</span>
+      </div>
+      <div class="panel-body no-pad">
+        <div class="table-wrap"><table id="sensitivityTable"></table></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Tornado Chart — NPV Drivers</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartTornado"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Break-Even Analysis</span></div>
+        <div class="panel-body"><div class="chart-container"><canvas id="chartBreakeven"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VALUATION ==================== -->
+  <div id="tab-valuation" class="tab-content">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">DCF Valuation</span></div>
+      <div class="panel-body no-pad">
+        <div class="table-wrap"><table id="dcfTable"></table></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Valuation Summary</span></div>
+        <div class="panel-body" id="valuationSummary"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Terminal Value Sensitivity</span></div>
+        <div class="panel-body no-pad">
+          <div class="table-wrap"><table id="terminalSensitivityTable"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h2>Export Data</h2>
+    <p>Select which datasets to export as CSV.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label style="font-size:14px"><input type="checkbox" checked value="income"> Income Statement</label>
+      <label style="font-size:14px"><input type="checkbox" checked value="cashflow"> Cash Flow Statement</label>
+      <label style="font-size:14px"><input type="checkbox" checked value="balance"> Balance Sheet</label>
+      <label style="font-size:14px"><input type="checkbox" checked value="scenarios"> Scenario Analysis</label>
+      <label style="font-size:14px"><input type="checkbox" checked value="dcf"> DCF Valuation</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeExportModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="performExport()">Download CSV</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  STATE & DEFAULTS
+// ============================================================
+const DEFAULTS = {
+  projYears: 5, discountRate: 12, taxRate: 21, inflationRate: 2.5,
+  initialInvestment: 500000, workingCapPct: 10,
+  revTokenization: 250000, revSubscriptions: 180000, revAdvisory: 120000, revCommissions: 80000,
+  revenueGrowth: 25,
+  costSalaries: 280000, costTech: 95000, costLegal: 60000, costMarketing: 45000, costAdmin: 35000,
+  cogsPct: 15, opexGrowth: 12,
+  capex: 75000, capexGrowth: 8, depreciation: 30000,
+  debtOutstanding: 200000, interestRate: 6.5, debtRepayment: 40000,
+};
+
+let model = {}; // computed model data
+let charts = {}; // chart instances
+
+// ============================================================
+//  UTILITIES
+// ============================================================
+const $ = id => document.getElementById(id);
+const fmt = (n, decimals = 0) => {
+  if (n === undefined || n === null || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n < 0 ? '-' : '') + '$' + (abs / 1e9).toFixed(1) + 'B';
+  if (abs >= 1e6) return (n < 0 ? '-' : '') + '$' + (abs / 1e6).toFixed(1) + 'M';
+  return (n < 0 ? '-' : '') + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+};
+const pct = (n, d = 1) => (n === undefined || isNaN(n)) ? '—' : n.toFixed(d) + '%';
+const fmtX = n => (n === undefined || isNaN(n)) ? '—' : n.toFixed(2) + 'x';
+
+function getInputs() {
+  return {
+    projYears: +$('inp-projYears').value,
+    discountRate: +$('inp-discountRate').value / 100,
+    taxRate: +$('inp-taxRate').value / 100,
+    inflationRate: +$('inp-inflationRate').value / 100,
+    initialInvestment: +$('inp-initialInvestment').value,
+    workingCapPct: +$('inp-workingCapPct').value / 100,
+    revStreams: {
+      'Tokenization Fees': +$('inp-rev-tokenization').value,
+      'Platform Subscriptions': +$('inp-rev-subscriptions').value,
+      'Advisory & Consulting': +$('inp-rev-advisory').value,
+      'Transaction Commissions': +$('inp-rev-commissions').value,
+    },
+    revenueGrowth: +$('inp-revenueGrowth').value / 100,
+    costs: {
+      'Salaries & Benefits': +$('inp-cost-salaries').value,
+      'Technology & Infra': +$('inp-cost-tech').value,
+      'Legal & Compliance': +$('inp-cost-legal').value,
+      'Marketing & Sales': +$('inp-cost-marketing').value,
+      'Office & Admin': +$('inp-cost-admin').value,
+    },
+    cogsPct: +$('inp-cogsPct').value / 100,
+    opexGrowth: +$('inp-opexGrowth').value / 100,
+    capex: +$('inp-capex').value,
+    capexGrowth: +$('inp-capexGrowth').value / 100,
+    depreciation: +$('inp-depreciation').value,
+    debtOutstanding: +$('inp-debtOutstanding').value,
+    interestRate: +$('inp-interestRate').value / 100,
+    debtRepayment: +$('inp-debtRepayment').value,
+  };
+}
+
+// ============================================================
+//  FINANCIAL MODEL ENGINE
+// ============================================================
+function buildModel(inputs) {
+  const N = inputs.projYears;
+  const years = Array.from({ length: N }, (_, i) => i + 1);
+  const labels = years.map(y => `Year ${y}`);
+
+  // Revenue
+  const revByStream = {};
+  const totalRevenue = [];
+  for (const [name, base] of Object.entries(inputs.revStreams)) {
+    revByStream[name] = years.map(y => base * Math.pow(1 + inputs.revenueGrowth, y - 1));
+  }
+  years.forEach((_, i) => {
+    totalRevenue[i] = Object.values(revByStream).reduce((s, arr) => s + arr[i], 0);
+  });
+
+  // COGS
+  const cogs = totalRevenue.map(r => r * inputs.cogsPct);
+  const grossProfit = totalRevenue.map((r, i) => r - cogs[i]);
+
+  // OpEx
+  const opexByCategory = {};
+  for (const [name, base] of Object.entries(inputs.costs)) {
+    opexByCategory[name] = years.map(y => base * Math.pow(1 + inputs.opexGrowth, y - 1));
+  }
+  const totalOpex = years.map((_, i) =>
+    Object.values(opexByCategory).reduce((s, arr) => s + arr[i], 0)
+  );
+
+  // EBITDA
+  const ebitda = grossProfit.map((gp, i) => gp - totalOpex[i]);
+
+  // Depreciation & Amortization
+  const depArr = years.map(y => inputs.depreciation * Math.pow(1 + inputs.inflationRate, y - 1));
+
+  // EBIT
+  const ebit = ebitda.map((e, i) => e - depArr[i]);
+
+  // Interest
+  const debtSchedule = [];
+  let debtBal = inputs.debtOutstanding;
+  const interestExp = [];
+  const principalPaid = [];
+  years.forEach(() => {
+    const interest = debtBal * inputs.interestRate;
+    const principal = Math.min(inputs.debtRepayment, debtBal);
+    interestExp.push(interest);
+    principalPaid.push(principal);
+    debtBal = Math.max(0, debtBal - principal);
+    debtSchedule.push(debtBal);
+  });
+
+  // EBT
+  const ebt = ebit.map((e, i) => e - interestExp[i]);
+
+  // Tax
+  const taxes = ebt.map(e => Math.max(0, e * inputs.taxRate));
+
+  // Net Income
+  const netIncome = ebt.map((e, i) => e - taxes[i]);
+
+  // Margins
+  const grossMargin = totalRevenue.map((r, i) => r > 0 ? (grossProfit[i] / r) * 100 : 0);
+  const ebitdaMargin = totalRevenue.map((r, i) => r > 0 ? (ebitda[i] / r) * 100 : 0);
+  const netMargin = totalRevenue.map((r, i) => r > 0 ? (netIncome[i] / r) * 100 : 0);
+
+  // Cash Flow from Operations
+  const changeInWC = [];
+  let prevWC = 0;
+  totalRevenue.forEach((r, i) => {
+    const wc = r * inputs.workingCapPct;
+    changeInWC.push(wc - prevWC);
+    prevWC = wc;
+  });
+
+  const cfOperations = netIncome.map((ni, i) => ni + depArr[i] - changeInWC[i]);
+
+  // CapEx
+  const capexArr = years.map(y => inputs.capex * Math.pow(1 + inputs.capexGrowth, y - 1));
+
+  // Cash Flow from Investing
+  const cfInvesting = capexArr.map(c => -c);
+
+  // Cash Flow from Financing
+  const cfFinancing = years.map((_, i) => -principalPaid[i]);
+
+  // Net Cash Flow
+  const netCashFlow = years.map((_, i) => cfOperations[i] + cfInvesting[i] + cfFinancing[i]);
+
+  // Free Cash Flow (FCFF)
+  const fcf = years.map((_, i) => ebit[i] * (1 - inputs.taxRate) + depArr[i] - capexArr[i] - changeInWC[i]);
+
+  // Cumulative Cash Flow
+  const cumCashFlow = [];
+  let cumCF = -inputs.initialInvestment;
+  netCashFlow.forEach(cf => { cumCF += cf; cumCashFlow.push(cumCF); });
+
+  // NPV
+  const npvCashFlows = [-inputs.initialInvestment, ...fcf];
+  let npv = 0;
+  npvCashFlows.forEach((cf, i) => { npv += cf / Math.pow(1 + inputs.discountRate, i); });
+
+  // IRR (Newton's method)
+  function calcIRR(cashFlows) {
+    let rate = 0.1;
+    for (let iter = 0; iter < 1000; iter++) {
+      let npvVal = 0, dnpv = 0;
+      cashFlows.forEach((cf, t) => {
+        npvVal += cf / Math.pow(1 + rate, t);
+        dnpv -= t * cf / Math.pow(1 + rate, t + 1);
+      });
+      if (Math.abs(dnpv) < 1e-12) break;
+      const newRate = rate - npvVal / dnpv;
+      if (Math.abs(newRate - rate) < 1e-8) { rate = newRate; break; }
+      rate = newRate;
+    }
+    return rate;
+  }
+  const irr = calcIRR(npvCashFlows);
+
+  // Payback Period
+  let paybackPeriod = null;
+  let cumForPayback = -inputs.initialInvestment;
+  for (let i = 0; i < N; i++) {
+    const prev = cumForPayback;
+    cumForPayback += netCashFlow[i];
+    if (cumForPayback >= 0 && prev < 0) {
+      paybackPeriod = i + (Math.abs(prev) / netCashFlow[i]);
+      break;
+    }
+  }
+
+  // ROI
+  const totalReturn = netCashFlow.reduce((s, c) => s + c, 0);
+  const roi = inputs.initialInvestment > 0 ? (totalReturn / inputs.initialInvestment) * 100 : 0;
+
+  // DSCR
+  const dscr = years.map((_, i) => {
+    const debtService = interestExp[i] + principalPaid[i];
+    return debtService > 0 ? ebitda[i] / debtService : null;
+  });
+
+  // Balance Sheet (simplified)
+  const cash = [inputs.initialInvestment + netCashFlow[0]];
+  for (let i = 1; i < N; i++) cash.push(cash[i - 1] + netCashFlow[i]);
+
+  const receivables = totalRevenue.map(r => r * 0.08); // ~30 days
+  const fixedAssets = [];
+  let fa = inputs.initialInvestment * 0.4; // initial PP&E
+  years.forEach((_, i) => { fa += capexArr[i] - depArr[i]; fixedAssets.push(Math.max(0, fa)); });
+
+  const totalAssets = years.map((_, i) => cash[i] + receivables[i] + fixedAssets[i] + totalRevenue[i] * inputs.workingCapPct);
+  const payables = totalOpex.map(o => o * 0.06);
+  const debt = [inputs.debtOutstanding - principalPaid[0]];
+  for (let i = 1; i < N; i++) debt.push(Math.max(0, debt[i - 1] - principalPaid[i]));
+  const totalLiabilities = years.map((_, i) => payables[i] + debt[i]);
+  const equity = totalAssets.map((a, i) => a - totalLiabilities[i]);
+
+  // Terminal Value (for DCF)
+  const terminalGrowthRate = 0.03;
+  const lastFCF = fcf[N - 1];
+  const terminalValue = (lastFCF * (1 + terminalGrowthRate)) / (inputs.discountRate - terminalGrowthRate);
+  const pvTerminal = terminalValue / Math.pow(1 + inputs.discountRate, N);
+  const pvFCF = fcf.reduce((s, cf, i) => s + cf / Math.pow(1 + inputs.discountRate, i + 1), 0);
+  const enterpriseValue = pvFCF + pvTerminal;
+  const equityValue = enterpriseValue - inputs.debtOutstanding;
+
+  // Break-even revenue
+  const totalFixedCosts = totalOpex[0] + depArr[0] + interestExp[0];
+  const contributionMarginPct = 1 - inputs.cogsPct;
+  const breakEvenRevenue = contributionMarginPct > 0 ? totalFixedCosts / contributionMarginPct : 0;
+
+  return {
+    years, labels, N,
+    revByStream, totalRevenue, cogs, grossProfit,
+    opexByCategory, totalOpex,
+    ebitda, depArr, ebit, interestExp, principalPaid, ebt, taxes, netIncome,
+    grossMargin, ebitdaMargin, netMargin,
+    cfOperations, cfInvesting, cfFinancing, netCashFlow, fcf, cumCashFlow,
+    capexArr, changeInWC,
+    npv, irr, paybackPeriod, roi, dscr,
+    cash, receivables, fixedAssets, totalAssets, payables, debt: debt, totalLiabilities, equity,
+    terminalValue, pvTerminal, pvFCF, enterpriseValue, equityValue, terminalGrowthRate,
+    breakEvenRevenue, debtSchedule,
+    inputs,
+  };
+}
+
+// ============================================================
+//  SCENARIO ENGINE
+// ============================================================
+function buildScenarios(baseInputs) {
+  const scenarios = {
+    best: { ...baseInputs, revenueGrowth: baseInputs.revenueGrowth * 1.4, cogsPct: baseInputs.cogsPct * 0.85, opexGrowth: baseInputs.opexGrowth * 0.8 },
+    base: { ...baseInputs },
+    worst: { ...baseInputs, revenueGrowth: baseInputs.revenueGrowth * 0.5, cogsPct: baseInputs.cogsPct * 1.2, opexGrowth: baseInputs.opexGrowth * 1.3 },
+  };
+  // Rebuild revStreams and costs objects (shallow copy doesn't deep-copy)
+  for (const key of ['best', 'worst']) {
+    scenarios[key].revStreams = { ...baseInputs.revStreams };
+    scenarios[key].costs = { ...baseInputs.costs };
+  }
+  return {
+    best: buildModel(scenarios.best),
+    base: buildModel(scenarios.base),
+    worst: buildModel(scenarios.worst),
+    params: scenarios,
+  };
+}
+
+// ============================================================
+//  SENSITIVITY MATRIX
+// ============================================================
+function buildSensitivity(baseInputs) {
+  const growthRates = [-5, 0, 10, 15, 20, 25, 30, 35, 40].map(g => g / 100);
+  const discountRates = [8, 10, 12, 14, 16, 18].map(d => d / 100);
+
+  const matrix = [];
+  for (const gr of growthRates) {
+    const row = [];
+    for (const dr of discountRates) {
+      const inp = { ...baseInputs, revenueGrowth: gr, discountRate: dr, revStreams: { ...baseInputs.revStreams }, costs: { ...baseInputs.costs } };
+      const m = buildModel(inp);
+      row.push(m.npv);
+    }
+    matrix.push(row);
+  }
+  return { growthRates, discountRates, matrix };
+}
+
+// ============================================================
+//  RENDERING
+// ============================================================
+function renderKPIs(m) {
+  const kpis = [
+    { label: 'Total Revenue (Y1)', value: fmt(m.totalRevenue[0]), change: pct(m.inputs.revenueGrowth * 100) + ' growth', positive: true },
+    { label: 'Net Income (Y1)', value: fmt(m.netIncome[0]), change: pct(m.netMargin[0]) + ' margin', positive: m.netIncome[0] >= 0 },
+    { label: 'Free Cash Flow (Y1)', value: fmt(m.fcf[0]), change: null, positive: m.fcf[0] >= 0 },
+    { label: 'NPV', value: fmt(m.npv), change: null, positive: m.npv >= 0 },
+    { label: 'IRR', value: pct(m.irr * 100), change: null, positive: m.irr > m.inputs.discountRate },
+    { label: 'Payback Period', value: m.paybackPeriod ? m.paybackPeriod.toFixed(1) + ' yrs' : 'N/A', change: null, positive: m.paybackPeriod !== null && m.paybackPeriod <= 5 },
+    { label: 'Enterprise Value', value: fmt(m.enterpriseValue), change: null, positive: true },
+    { label: 'DSCR (Y1)', value: fmtX(m.dscr[0]), change: m.dscr[0] >= 1.25 ? 'Healthy' : 'Watch', positive: m.dscr[0] >= 1.25 },
+  ];
+
+  $('kpi-row').innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="color:${k.positive ? 'var(--green)' : 'var(--red)'}">${k.value}</div>
+      ${k.change ? `<div class="kpi-change ${k.positive ? 'positive' : 'negative'}">${k.change}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderMetricsTable(m) {
+  const rows = [
+    ['Gross Margin', ...m.grossMargin.map(v => pct(v))],
+    ['EBITDA Margin', ...m.ebitdaMargin.map(v => pct(v))],
+    ['Net Profit Margin', ...m.netMargin.map(v => pct(v))],
+    ['Revenue Growth', ...m.years.map((_, i) => i === 0 ? '—' : pct(((m.totalRevenue[i] / m.totalRevenue[i - 1]) - 1) * 100))],
+    ['DSCR', ...m.dscr.map(v => fmtX(v))],
+    ['ROI (Cumulative)', ...m.cumCashFlow.map(c => pct((c / m.inputs.initialInvestment) * 100))],
+  ];
+  $('metricsTable').innerHTML = `
+    <thead><tr><th>Metric</th>${m.labels.map(l => `<th>${l}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr><td class="row-header">${r[0]}</td>${r.slice(1).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+  `;
+}
+
+function renderIncomeStatement(m) {
+  const section = (label, data, cls = '') =>
+    `<tr class="${cls}"><td class="${cls.includes('indent') ? 'indent' : 'row-header'}">${label}</td>${data.map(v => `<td>${fmt(v)}</td>`).join('')}</tr>`;
+
+  const html = `
+    <thead><tr><th></th>${m.labels.map(l => `<th>${l}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${Object.entries(m.revByStream).map(([name, arr]) => section(name, arr, 'indent')).join('')}
+      ${section('Total Revenue', m.totalRevenue, 'row-subtotal')}
+      ${section('Cost of Goods Sold', m.cogs.map(c => -c), 'indent')}
+      ${section('Gross Profit', m.grossProfit, 'row-subtotal')}
+      ${Object.entries(m.opexByCategory).map(([name, arr]) => section(name, arr.map(v => -v), 'indent')).join('')}
+      ${section('Total Operating Expenses', m.totalOpex.map(v => -v), 'row-subtotal')}
+      ${section('EBITDA', m.ebitda, 'row-subtotal')}
+      ${section('Depreciation & Amortization', m.depArr.map(v => -v), 'indent')}
+      ${section('EBIT', m.ebit, 'row-subtotal')}
+      ${section('Interest Expense', m.interestExp.map(v => -v), 'indent')}
+      ${section('Earnings Before Tax', m.ebt, 'row-subtotal')}
+      ${section('Income Tax', m.taxes.map(v => -v), 'indent')}
+      ${section('Net Income', m.netIncome, 'row-subtotal')}
+    </tbody>
+  `;
+  $('incomeTable').innerHTML = html;
+}
+
+function renderCashFlow(m) {
+  const section = (label, data, cls = '') =>
+    `<tr class="${cls}"><td class="${cls.includes('indent') ? 'indent' : 'row-header'}">${label}</td>${data.map(v => `<td>${fmt(v)}</td>`).join('')}</tr>`;
+
+  $('cashflowTable').innerHTML = `
+    <thead><tr><th></th>${m.labels.map(l => `<th>${l}</th>`).join('')}</tr></thead>
+    <tbody>
+      <tr><td class="row-header" colspan="${m.N + 1}" style="color:var(--rc-gold);font-weight:700">Operating Activities</td></tr>
+      ${section('Net Income', m.netIncome, 'indent')}
+      ${section('+ Depreciation', m.depArr, 'indent')}
+      ${section('- Change in Working Capital', m.changeInWC.map(v => -v), 'indent')}
+      ${section('Cash from Operations', m.cfOperations, 'row-subtotal')}
+      <tr><td class="row-header" colspan="${m.N + 1}" style="color:var(--rc-gold);font-weight:700">Investing Activities</td></tr>
+      ${section('Capital Expenditures', m.capexArr.map(v => -v), 'indent')}
+      ${section('Cash from Investing', m.cfInvesting, 'row-subtotal')}
+      <tr><td class="row-header" colspan="${m.N + 1}" style="color:var(--rc-gold);font-weight:700">Financing Activities</td></tr>
+      ${section('Debt Repayment', m.principalPaid.map(v => -v), 'indent')}
+      ${section('Cash from Financing', m.cfFinancing, 'row-subtotal')}
+      ${section('Net Cash Flow', m.netCashFlow, 'row-subtotal')}
+      ${section('Cumulative Cash Flow', m.cumCashFlow, 'row-subtotal')}
+    </tbody>
+  `;
+}
+
+function renderBalanceSheet(m) {
+  const section = (label, data, cls = '') =>
+    `<tr class="${cls}"><td class="${cls.includes('indent') ? 'indent' : 'row-header'}">${label}</td>${data.map(v => `<td>${fmt(v)}</td>`).join('')}</tr>`;
+
+  $('balanceTable').innerHTML = `
+    <thead><tr><th></th>${m.labels.map(l => `<th>${l}</th>`).join('')}</tr></thead>
+    <tbody>
+      <tr><td class="row-header" colspan="${m.N + 1}" style="color:var(--rc-gold);font-weight:700">Assets</td></tr>
+      ${section('Cash & Equivalents', m.cash, 'indent')}
+      ${section('Accounts Receivable', m.receivables, 'indent')}
+      ${section('Inventory / Working Capital', m.totalRevenue.map(r => r * m.inputs.workingCapPct), 'indent')}
+      ${section('Fixed Assets (Net)', m.fixedAssets, 'indent')}
+      ${section('Total Assets', m.totalAssets, 'row-subtotal')}
+      <tr><td class="row-header" colspan="${m.N + 1}" style="color:var(--rc-gold);font-weight:700">Liabilities</td></tr>
+      ${section('Accounts Payable', m.payables, 'indent')}
+      ${section('Long-Term Debt', m.debt, 'indent')}
+      ${section('Total Liabilities', m.totalLiabilities, 'row-subtotal')}
+      <tr><td class="row-header" colspan="${m.N + 1}" style="color:var(--rc-gold);font-weight:700">Equity</td></tr>
+      ${section("Shareholders' Equity", m.equity, 'row-subtotal')}
+    </tbody>
+  `;
+}
+
+function renderScenarios(sc) {
+  // Params table
+  $('scenarioParamsTable').innerHTML = `
+    <thead><tr><th>Parameter</th><th><span class="scenario-badge scenario-best">Best</span></th><th><span class="scenario-badge scenario-base">Base</span></th><th><span class="scenario-badge scenario-worst">Worst</span></th></tr></thead>
+    <tbody>
+      <tr><td>Revenue Growth</td><td>${pct(sc.params.best.revenueGrowth * 100)}</td><td>${pct(sc.params.base.revenueGrowth * 100)}</td><td>${pct(sc.params.worst.revenueGrowth * 100)}</td></tr>
+      <tr><td>COGS %</td><td>${pct(sc.params.best.cogsPct * 100)}</td><td>${pct(sc.params.base.cogsPct * 100)}</td><td>${pct(sc.params.worst.cogsPct * 100)}</td></tr>
+      <tr><td>OpEx Growth</td><td>${pct(sc.params.best.opexGrowth * 100)}</td><td>${pct(sc.params.base.opexGrowth * 100)}</td><td>${pct(sc.params.worst.opexGrowth * 100)}</td></tr>
+    </tbody>
+  `;
+
+  // Results table
+  const metrics = [
+    ['Total Revenue (Final Year)', sc => fmt(sc.totalRevenue[sc.N - 1])],
+    ['Cumulative Revenue', sc => fmt(sc.totalRevenue.reduce((a, b) => a + b, 0))],
+    ['Net Income (Final Year)', sc => fmt(sc.netIncome[sc.N - 1])],
+    ['NPV', sc => fmt(sc.npv)],
+    ['IRR', sc => pct(sc.irr * 100)],
+    ['Enterprise Value', sc => fmt(sc.enterpriseValue)],
+    ['Payback Period', sc => sc.paybackPeriod ? sc.paybackPeriod.toFixed(1) + ' yrs' : 'N/A'],
+  ];
+
+  $('scenarioResultsTable').innerHTML = `
+    <thead><tr><th>Metric</th><th><span class="scenario-badge scenario-best">Best</span></th><th><span class="scenario-badge scenario-base">Base</span></th><th><span class="scenario-badge scenario-worst">Worst</span></th></tr></thead>
+    <tbody>${metrics.map(([name, fn]) =>
+      `<tr><td class="row-header">${name}</td><td>${fn(sc.best)}</td><td>${fn(sc.base)}</td><td>${fn(sc.worst)}</td></tr>`
+    ).join('')}</tbody>
+  `;
+}
+
+function renderSensitivity(sens, baseNPV) {
+  const header = `<thead><tr><th>Growth \\ Discount</th>${sens.discountRates.map(d => `<th>${pct(d * 100, 0)}</th>`).join('')}</tr></thead>`;
+  const body = sens.growthRates.map((gr, ri) =>
+    `<tr><td class="row-header">${pct(gr * 100, 0)}</td>${sens.matrix[ri].map(npv => {
+      const diff = baseNPV !== 0 ? ((npv - baseNPV) / Math.abs(baseNPV)) * 100 : 0;
+      let cls = 'neutral';
+      if (diff > 30) cls = 'high-positive';
+      else if (diff > 0) cls = 'low-positive';
+      else if (diff < -30) cls = 'high-negative';
+      else if (diff < 0) cls = 'low-negative';
+      return `<td class="sensitivity-cell ${cls}">${fmt(npv)}</td>`;
+    }).join('')}</tr>`
+  ).join('');
+
+  $('sensitivityTable').innerHTML = header + '<tbody>' + body + '</tbody>';
+}
+
+function renderDCF(m) {
+  $('dcfTable').innerHTML = `
+    <thead><tr><th></th>${m.labels.map(l => `<th>${l}</th>`).join('')}<th>Terminal</th></tr></thead>
+    <tbody>
+      <tr><td class="row-header">Free Cash Flow</td>${m.fcf.map(f => `<td>${fmt(f)}</td>`).join('')}<td>—</td></tr>
+      <tr><td class="row-header">Discount Factor</td>${m.years.map(y => `<td>${(1 / Math.pow(1 + m.inputs.discountRate, y)).toFixed(4)}</td>`).join('')}<td>${(1 / Math.pow(1 + m.inputs.discountRate, m.N)).toFixed(4)}</td></tr>
+      <tr><td class="row-header">PV of FCF</td>${m.fcf.map((f, i) => `<td>${fmt(f / Math.pow(1 + m.inputs.discountRate, i + 1))}</td>`).join('')}<td>${fmt(m.pvTerminal)}</td></tr>
+    </tbody>
+  `;
+
+  $('valuationSummary').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="kpi-label">PV of Projected FCFs</div>
+        <div style="font-size:22px;font-weight:700;color:var(--blue)">${fmt(m.pvFCF)}</div>
+      </div>
+      <div>
+        <div class="kpi-label">PV of Terminal Value</div>
+        <div style="font-size:22px;font-weight:700;color:var(--blue)">${fmt(m.pvTerminal)}</div>
+      </div>
+      <div>
+        <div class="kpi-label">Enterprise Value</div>
+        <div style="font-size:22px;font-weight:700;color:var(--rc-gold)">${fmt(m.enterpriseValue)}</div>
+      </div>
+      <div>
+        <div class="kpi-label">Equity Value</div>
+        <div style="font-size:22px;font-weight:700;color:var(--green)">${fmt(m.equityValue)}</div>
+      </div>
+      <div>
+        <div class="kpi-label">Terminal Growth Rate</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text-secondary)">${pct(m.terminalGrowthRate * 100)}</div>
+      </div>
+      <div>
+        <div class="kpi-label">TV as % of EV</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text-secondary)">${m.enterpriseValue > 0 ? pct((m.pvTerminal / m.enterpriseValue) * 100) : '—'}</div>
+      </div>
+    </div>
+  `;
+
+  // Terminal sensitivity
+  const tgRates = [1, 2, 2.5, 3, 3.5, 4].map(r => r / 100);
+  const dRates = [8, 10, 12, 14, 16].map(r => r / 100);
+  $('terminalSensitivityTable').innerHTML = `
+    <thead><tr><th>TGR \\ WACC</th>${dRates.map(d => `<th>${pct(d * 100, 0)}</th>`).join('')}</tr></thead>
+    <tbody>${tgRates.map(tg => `<tr><td class="row-header">${pct(tg * 100, 1)}</td>${dRates.map(dr => {
+      const tv = (m.fcf[m.N - 1] * (1 + tg)) / (dr - tg);
+      const pvTV = tv / Math.pow(1 + dr, m.N);
+      const ev = m.pvFCF + pvTV;
+      return `<td>${fmt(ev)}</td>`;
+    }).join('')}</tr>`).join('')}</tbody>
+  `;
+}
+
+// ============================================================
+//  CHARTS
+// ============================================================
+const chartColors = {
+  green: 'rgba(63,185,80,0.8)',
+  greenBg: 'rgba(63,185,80,0.15)',
+  red: 'rgba(248,81,73,0.8)',
+  redBg: 'rgba(248,81,73,0.15)',
+  blue: 'rgba(88,166,255,0.8)',
+  blueBg: 'rgba(88,166,255,0.15)',
+  gold: 'rgba(201,168,76,0.8)',
+  goldBg: 'rgba(201,168,76,0.15)',
+  purple: 'rgba(188,140,255,0.8)',
+  purpleBg: 'rgba(188,140,255,0.15)',
+  gray: 'rgba(139,148,158,0.8)',
+};
+
+const defaultChartOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: '#8b949e', font: { size: 11 } } },
+  },
+  scales: {
+    x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(48,54,61,0.5)' } },
+    y: { ticks: { color: '#8b949e', callback: v => fmt(v) }, grid: { color: 'rgba(48,54,61,0.5)' } },
+  },
+};
+
+function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+
+function renderCharts(m, sc) {
+  // Revenue vs Expenses
+  destroyChart('revExp');
+  charts.revExp = new Chart($('chartRevExp'), {
+    type: 'bar',
+    data: {
+      labels: m.labels,
+      datasets: [
+        { label: 'Revenue', data: m.totalRevenue, backgroundColor: chartColors.green },
+        { label: 'Total Costs', data: m.years.map((_, i) => m.cogs[i] + m.totalOpex[i]), backgroundColor: chartColors.red },
+      ],
+    },
+    options: { ...defaultChartOpts },
+  });
+
+  // Net Cash Flow
+  destroyChart('netCF');
+  charts.netCF = new Chart($('chartNetCF'), {
+    type: 'bar',
+    data: {
+      labels: m.labels,
+      datasets: [{
+        label: 'Net Cash Flow',
+        data: m.netCashFlow,
+        backgroundColor: m.netCashFlow.map(v => v >= 0 ? chartColors.green : chartColors.red),
+      }],
+    },
+    options: { ...defaultChartOpts },
+  });
+
+  // Revenue Breakdown
+  destroyChart('revBreak');
+  const streamNames = Object.keys(m.revByStream);
+  const streamColors = [chartColors.green, chartColors.blue, chartColors.gold, chartColors.purple];
+  charts.revBreak = new Chart($('chartRevBreakdown'), {
+    type: 'doughnut',
+    data: {
+      labels: streamNames,
+      datasets: [{ data: streamNames.map(n => m.revByStream[n][0]), backgroundColor: streamColors }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { color: '#8b949e', font: { size: 11 } } } },
+    },
+  });
+
+  // Cumulative Cash Flow
+  destroyChart('cumCF');
+  charts.cumCF = new Chart($('chartCumCF'), {
+    type: 'line',
+    data: {
+      labels: ['Start', ...m.labels],
+      datasets: [{
+        label: 'Cumulative Cash Flow',
+        data: [-m.inputs.initialInvestment, ...m.cumCashFlow],
+        borderColor: chartColors.blue,
+        backgroundColor: chartColors.blueBg,
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: { ...defaultChartOpts },
+  });
+
+  // Margins
+  destroyChart('margins');
+  charts.margins = new Chart($('chartMargins'), {
+    type: 'line',
+    data: {
+      labels: m.labels,
+      datasets: [
+        { label: 'Gross Margin', data: m.grossMargin, borderColor: chartColors.green, tension: 0.3 },
+        { label: 'EBITDA Margin', data: m.ebitdaMargin, borderColor: chartColors.blue, tension: 0.3 },
+        { label: 'Net Margin', data: m.netMargin, borderColor: chartColors.gold, tension: 0.3 },
+      ],
+    },
+    options: {
+      ...defaultChartOpts,
+      scales: { ...defaultChartOpts.scales, y: { ...defaultChartOpts.scales.y, ticks: { ...defaultChartOpts.scales.y.ticks, callback: v => v.toFixed(0) + '%' } } },
+    },
+  });
+
+  // Waterfall
+  destroyChart('waterfall');
+  const wfLabels = ['Revenue', 'COGS', 'Gross Profit', 'OpEx', 'EBITDA', 'D&A', 'Interest', 'Tax', 'Net Income'];
+  const wfValues = [m.totalRevenue[0], -m.cogs[0], m.grossProfit[0], -m.totalOpex[0], m.ebitda[0], -m.depArr[0], -m.interestExp[0], -m.taxes[0], m.netIncome[0]];
+  const wfColors = wfValues.map((v, i) => [2, 4, 8].includes(i) ? chartColors.blue : (v >= 0 ? chartColors.green : chartColors.red));
+  charts.waterfall = new Chart($('chartWaterfall'), {
+    type: 'bar',
+    data: { labels: wfLabels, datasets: [{ label: 'Amount', data: wfValues.map(Math.abs), backgroundColor: wfColors }] },
+    options: { ...defaultChartOpts, plugins: { ...defaultChartOpts.plugins, legend: { display: false } } },
+  });
+
+  // FCF Trend
+  destroyChart('fcf');
+  charts.fcf = new Chart($('chartFCF'), {
+    type: 'line',
+    data: {
+      labels: m.labels,
+      datasets: [{
+        label: 'Free Cash Flow',
+        data: m.fcf,
+        borderColor: chartColors.green,
+        backgroundColor: chartColors.greenBg,
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: { ...defaultChartOpts },
+  });
+
+  // Assets Chart
+  destroyChart('assets');
+  charts.assets = new Chart($('chartAssets'), {
+    type: 'bar',
+    data: {
+      labels: m.labels,
+      datasets: [
+        { label: 'Cash', data: m.cash, backgroundColor: chartColors.green },
+        { label: 'Receivables', data: m.receivables, backgroundColor: chartColors.blue },
+        { label: 'Fixed Assets', data: m.fixedAssets, backgroundColor: chartColors.gold },
+      ],
+    },
+    options: { ...defaultChartOpts, scales: { ...defaultChartOpts.scales, x: { ...defaultChartOpts.scales.x, stacked: true }, y: { ...defaultChartOpts.scales.y, stacked: true } } },
+  });
+
+  // Scenario Revenue
+  destroyChart('scenarios');
+  charts.scenarios = new Chart($('chartScenarios'), {
+    type: 'line',
+    data: {
+      labels: m.labels,
+      datasets: [
+        { label: 'Best Case', data: sc.best.totalRevenue, borderColor: chartColors.green, borderDash: [5, 5], tension: 0.3 },
+        { label: 'Base Case', data: sc.base.totalRevenue, borderColor: chartColors.blue, tension: 0.3, borderWidth: 3 },
+        { label: 'Worst Case', data: sc.worst.totalRevenue, borderColor: chartColors.red, borderDash: [5, 5], tension: 0.3 },
+      ],
+    },
+    options: { ...defaultChartOpts },
+  });
+
+  // Tornado chart
+  destroyChart('tornado');
+  const baseNPV = m.npv;
+  const drivers = [
+    { name: 'Revenue Growth', field: 'revenueGrowth', delta: 0.05 },
+    { name: 'Discount Rate', field: 'discountRate', delta: 0.02 },
+    { name: 'COGS %', field: 'cogsPct', delta: 0.03 },
+    { name: 'OpEx Growth', field: 'opexGrowth', delta: 0.03 },
+    { name: 'Tax Rate', field: 'taxRate', delta: 0.03 },
+  ];
+  const tornadoData = drivers.map(d => {
+    const upInp = { ...m.inputs, revStreams: { ...m.inputs.revStreams }, costs: { ...m.inputs.costs } };
+    const downInp = { ...m.inputs, revStreams: { ...m.inputs.revStreams }, costs: { ...m.inputs.costs } };
+    upInp[d.field] = m.inputs[d.field] + d.delta;
+    downInp[d.field] = m.inputs[d.field] - d.delta;
+    return { name: d.name, up: buildModel(upInp).npv - baseNPV, down: buildModel(downInp).npv - baseNPV };
+  }).sort((a, b) => Math.abs(b.up - b.down) - Math.abs(a.up - a.down));
+
+  charts.tornado = new Chart($('chartTornado'), {
+    type: 'bar',
+    data: {
+      labels: tornadoData.map(d => d.name),
+      datasets: [
+        { label: 'Upside', data: tornadoData.map(d => d.up), backgroundColor: chartColors.green },
+        { label: 'Downside', data: tornadoData.map(d => d.down), backgroundColor: chartColors.red },
+      ],
+    },
+    options: { ...defaultChartOpts, indexAxis: 'y' },
+  });
+
+  // Break-even
+  destroyChart('breakeven');
+  const beRevenues = Array.from({ length: 20 }, (_, i) => m.breakEvenRevenue * (i + 1) / 10);
+  const beCosts = beRevenues.map(r => r * m.inputs.cogsPct + m.totalOpex[0] + m.depArr[0]);
+  charts.breakeven = new Chart($('chartBreakeven'), {
+    type: 'line',
+    data: {
+      labels: beRevenues.map(r => fmt(r)),
+      datasets: [
+        { label: 'Revenue', data: beRevenues, borderColor: chartColors.green, tension: 0.1 },
+        { label: 'Total Costs', data: beCosts, borderColor: chartColors.red, tension: 0.1 },
+      ],
+    },
+    options: {
+      ...defaultChartOpts,
+      plugins: {
+        ...defaultChartOpts.plugins,
+        annotation: {
+          annotations: { breakeven: { type: 'line', xMin: 10, xMax: 10, borderColor: chartColors.gold, borderDash: [5, 5] } }
+        }
+      },
+      scales: { ...defaultChartOpts.scales, x: { ...defaultChartOpts.scales.x, display: false } },
+    },
+  });
+}
+
+// ============================================================
+//  MAIN RECALCULATE
+// ============================================================
+function recalculate() {
+  const inputs = getInputs();
+  model = buildModel(inputs);
+  const scenarios = buildScenarios(inputs);
+  const sensitivity = buildSensitivity(inputs);
+
+  renderKPIs(model);
+  renderMetricsTable(model);
+  renderIncomeStatement(model);
+  renderCashFlow(model);
+  renderBalanceSheet(model);
+  renderScenarios(scenarios);
+  renderSensitivity(sensitivity, model.npv);
+  renderDCF(model);
+  renderCharts(model, scenarios);
+}
+
+function resetToDefaults() {
+  $('inp-projYears').value = DEFAULTS.projYears;
+  $('inp-discountRate').value = DEFAULTS.discountRate;
+  $('inp-taxRate').value = DEFAULTS.taxRate;
+  $('inp-inflationRate').value = DEFAULTS.inflationRate;
+  $('inp-initialInvestment').value = DEFAULTS.initialInvestment;
+  $('inp-workingCapPct').value = DEFAULTS.workingCapPct;
+  $('inp-rev-tokenization').value = DEFAULTS.revTokenization;
+  $('inp-rev-subscriptions').value = DEFAULTS.revSubscriptions;
+  $('inp-rev-advisory').value = DEFAULTS.revAdvisory;
+  $('inp-rev-commissions').value = DEFAULTS.revCommissions;
+  $('inp-revenueGrowth').value = DEFAULTS.revenueGrowth;
+  $('inp-cost-salaries').value = DEFAULTS.costSalaries;
+  $('inp-cost-tech').value = DEFAULTS.costTech;
+  $('inp-cost-legal').value = DEFAULTS.costLegal;
+  $('inp-cost-marketing').value = DEFAULTS.costMarketing;
+  $('inp-cost-admin').value = DEFAULTS.costAdmin;
+  $('inp-cogsPct').value = DEFAULTS.cogsPct;
+  $('inp-opexGrowth').value = DEFAULTS.opexGrowth;
+  $('inp-capex').value = DEFAULTS.capex;
+  $('inp-capexGrowth').value = DEFAULTS.capexGrowth;
+  $('inp-depreciation').value = DEFAULTS.depreciation;
+  $('inp-debtOutstanding').value = DEFAULTS.debtOutstanding;
+  $('inp-interestRate').value = DEFAULTS.interestRate;
+  $('inp-debtRepayment').value = DEFAULTS.debtRepayment;
+  recalculate();
+}
+
+// ============================================================
+//  TABS
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    tab.classList.add('active');
+    $('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Auto-recalculate on input change
+document.querySelectorAll('input[type="number"]').forEach(inp => {
+  inp.addEventListener('change', recalculate);
+});
+
+// ============================================================
+//  EXPORT
+// ============================================================
+function openExportModal() { $('exportModal').classList.add('active'); }
+function closeExportModal() { $('exportModal').classList.remove('active'); }
+
+function tableToCSV(tableId) {
+  const table = $(tableId);
+  if (!table) return '';
+  const rows = [];
+  table.querySelectorAll('tr').forEach(tr => {
+    const cells = [];
+    tr.querySelectorAll('th, td').forEach(td => {
+      let text = td.textContent.trim().replace(/"/g, '""');
+      cells.push('"' + text + '"');
+    });
+    rows.push(cells.join(','));
+  });
+  return rows.join('\n');
+}
+
+function exportTable(tableId) {
+  const csv = tableToCSV(tableId);
+  downloadCSV(csv, tableId + '.csv');
+}
+
+function performExport() {
+  const checks = $('exportModal').querySelectorAll('input[type="checkbox"]:checked');
+  const tableMap = { income: 'incomeTable', cashflow: 'cashflowTable', balance: 'balanceTable', scenarios: 'scenarioResultsTable', dcf: 'dcfTable' };
+  let csv = '';
+  checks.forEach(chk => {
+    if (tableMap[chk.value]) {
+      csv += `\n\n=== ${chk.value.toUpperCase()} ===\n`;
+      csv += tableToCSV(tableMap[chk.value]);
+    }
+  });
+  downloadCSV(csv, 'redclover-financial-model.csv');
+  closeExportModal();
+}
+
+function downloadCSV(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+recalculate();
+</script>
+</body>
+</html>
